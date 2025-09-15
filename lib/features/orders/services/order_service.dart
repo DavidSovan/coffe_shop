@@ -6,16 +6,14 @@ class OrderService {
   final Dio _dio = DioClient().dio;
 
   Future<OrderModel> createOrder(
-      String accessToken, Map<String, dynamic> orderData) async {
+    String accessToken,
+    Map<String, dynamic> orderData,
+  ) async {
     try {
       final response = await _dio.post(
-        'http://127.0.0.1:8000/api/v1/orders',
+        'http://127.0.0.1:8000/api/v1/orders/',
         data: orderData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $accessToken',
-          },
-        ),
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
       );
 
       if (response.statusCode == 200) {
