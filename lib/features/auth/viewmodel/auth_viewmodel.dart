@@ -2,34 +2,39 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uc_coffee_shop/features/auth/models/user_model.dart';
 import '../services/auth_service.dart';
+import 'package:uc_coffee_shop/core/network/dio.dart';
 
 class AuthViewModel with ChangeNotifier {
-  final AuthService _authService = AuthService();
+  final AuthService _authService = AuthService(DioClient().dio);
   bool _isLoading = false;
   String _errorMessage = '';
 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
-  Future<void> login(String email, String password) async {
+  Future<bool> login(String email, String password) async {
     _setLoading(true);
     try {
       final response = await _authService.login(email, password);
       await _handleAuthResponse(response);
+      return true;
     } catch (e) {
       _setError(e.toString());
+      return false;
     } finally {
       _setLoading(false);
     }
   }
 
-  Future<void> register(String username, String email, String password) async {
+  Future<bool> register(String username, String email, String password) async {
     _setLoading(true);
     try {
       final response = await _authService.register(username, email, password);
       await _handleAuthResponse(response);
+      return true;
     } catch (e) {
       _setError(e.toString());
+      return false;
     } finally {
       _setLoading(false);
     }
@@ -42,6 +47,28 @@ class AuthViewModel with ChangeNotifier {
     final user = UserModel.fromJson(response['user']);
     // Store user data if needed
     notifyListeners();
+  }
+
+  Future<bool> logout() async {
+    _setLoading(true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      if (token == null || token.isEmpty) {
+        // No token to revoke; ensure local cleanup
+        await prefs.remove('access_token');
+        return true;
+      }
+      await _authService.logout(token);
+      await prefs.remove('access_token');
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 
   void _setLoading(bool value) {

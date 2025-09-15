@@ -1,19 +1,42 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 
 class AuthService {
-  final Dio _dio = Dio();
+  final Dio _dio;
+  AuthService(this._dio);
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await _dio.post(
-        'http://127.0.0.1:8000/api/v1/auth/login',
-        data: jsonEncode({'email': email, 'password': password}),
-        options: Options(headers: {'Content-Type': 'application/json'}),
+        '/api/v1/auth/login',
+        data: {'email': email, 'password': password},
       );
       return response.data;
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Login failed';
+      if (e.response?.statusCode == 401) {
+        throw 'Using wrong credential';
+      }
+      throw e.response?.data['message'] ??
+          e.response?.data['error'] ??
+          e.message ??
+          'Login failed';
+    }
+  }
+
+  Future<void> logout(String token) async {
+    try {
+      await _dio.post(
+        '/api/v1/auth/logout',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+    } on DioException catch (e) {
+      throw e.response?.data['message'] ??
+          e.response?.data['error'] ??
+          e.message ??
+          'Logout failed';
     }
   }
 
@@ -24,18 +47,20 @@ class AuthService {
   ) async {
     try {
       final response = await _dio.post(
-        'http://127.0.0.1:8000/api/v1/auth/register',
-        data: jsonEncode({
+        '/api/v1/auth/register',
+        data: {
           'username': username,
           'email': email,
           'password': password,
           'role_names': ['customer'],
-        }),
-        options: Options(headers: {'Content-Type': 'application/json'}),
+        },
       );
       return response.data;
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Registration failed';
+      throw e.response?.data['message'] ??
+          e.response?.data['error'] ??
+          e.message ??
+          'Registration failed';
     }
   }
 }
