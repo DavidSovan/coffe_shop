@@ -34,4 +34,9 @@ class CartViewModel extends ChangeNotifier {
   int get totalItems {
     return _cartItems.values.fold(0, (total, current) => total + current);
   }
+
+  void clearCart() {
+    _cartItems.clear();
+    notifyListeners();
+  }
 }
