@@ -8,9 +8,11 @@ class AuthViewModel with ChangeNotifier {
   final AuthService _authService = AuthService(DioClient().dio);
   bool _isLoading = false;
   String _errorMessage = '';
+  UserModel? _user;
 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
+  UserModel? get user => _user;
 
   Future<bool> login(String email, String password) async {
     _setLoading(true);
@@ -44,7 +46,8 @@ class AuthViewModel with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', response['access_token']);
 
-    final user = UserModel.fromJson(response['user']);
+    _user = UserModel.fromJson(response['user']);
+    _user = _user!.copyWith(accessToken: response['access_token']);
     // Store user data if needed
     notifyListeners();
   }
@@ -61,6 +64,7 @@ class AuthViewModel with ChangeNotifier {
       }
       await _authService.logout(token);
       await prefs.remove('access_token');
+      _user = null;
       notifyListeners();
       return true;
     } catch (e) {

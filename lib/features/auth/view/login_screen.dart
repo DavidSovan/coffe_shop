@@ -18,6 +18,38 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
 
+  void _login() async {
+    if (_formKey.currentState!.validate()) {
+      final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+      authViewModel.clearError();
+      final success = await authViewModel.login(
+        _emailController.text,
+        _passwordController.text,
+      );
+      if (mounted) {
+        if (success) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProductScreen(),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                authViewModel.errorMessage.isNotEmpty
+                    ? authViewModel.errorMessage
+                    : 'Login failed',
+              ),
+              backgroundColor: CoffeeShopTheme.errorColor,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authViewModel = Provider.of<AuthViewModel>(context);
@@ -50,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(60),
                       boxShadow: [
                         BoxShadow(
-                          color: CoffeeShopTheme.darkBrown.withOpacity(0.3),
+                          color: CoffeeShopTheme.darkBrown.withAlpha(77),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),
@@ -89,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: CoffeeShopTheme.darkBrown.withOpacity(0.1),
+                          color: CoffeeShopTheme.darkBrown.withAlpha(26),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -130,9 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15),
                                 borderSide: BorderSide(
-                                  color: CoffeeShopTheme.lightBrown.withOpacity(
-                                    0.3,
-                                  ),
+                                  color: CoffeeShopTheme.lightBrown.withAlpha(77),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -206,9 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15),
                                 borderSide: BorderSide(
-                                  color: CoffeeShopTheme.lightBrown.withOpacity(
-                                    0.3,
-                                  ),
+                                  color: CoffeeShopTheme.lightBrown.withAlpha(77),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -243,14 +271,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: CoffeeShopTheme.errorColor.withOpacity(
-                                  0.1,
-                                ),
+                                color: CoffeeShopTheme.errorColor.withAlpha(26),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: CoffeeShopTheme.errorColor.withOpacity(
-                                    0.3,
-                                  ),
+                                  color: CoffeeShopTheme.errorColor.withAlpha(77),
                                 ),
                               ),
                               child: Row(
@@ -283,7 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ? Container(
                                     decoration: BoxDecoration(
                                       color: CoffeeShopTheme.primaryBrown
-                                          .withOpacity(0.7),
+                                          .withAlpha(178),
                                       borderRadius: BorderRadius.circular(28),
                                     ),
                                     child: const Center(
@@ -293,45 +317,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   )
                                 : ElevatedButton(
-                                    onPressed: () {
-                                      if (_formKey.currentState!.validate()) {
-                                        authViewModel.clearError();
-                                        authViewModel
-                                            .login(
-                                              _emailController.text,
-                                              _passwordController.text,
-                                            )
-                                            .then((success) {
-                                              if (success) {
-                                                Navigator.pushReplacement(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        const ProductScreen(),
-                                                  ),
-                                                );
-                                              } else {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      authViewModel
-                                                              .errorMessage
-                                                              .isNotEmpty
-                                                          ? authViewModel
-                                                                .errorMessage
-                                                          : 'Login failed',
-                                                    ),
-                                                    backgroundColor:
-                                                        CoffeeShopTheme
-                                                            .errorColor,
-                                                  ),
-                                                );
-                                              }
-                                            });
-                                      }
-                                    },
+                                    onPressed: _login,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor:
                                           CoffeeShopTheme.primaryBrown,

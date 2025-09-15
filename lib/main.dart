@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uc_coffee_shop/features/orders/viewmodel/order_viewmodel.dart';
+import 'package:uc_coffee_shop/features/product/viewmodel/cart_viewmodel.dart';
+import 'package:uc_coffee_shop/features/product/viewmodel/product_viewmodel.dart';
 import 'package:uc_coffee_shop/theme/app_theme.dart';
 import 'features/auth/view/login_screen.dart';
 import 'features/auth/viewmodel/auth_viewmodel.dart';
@@ -16,8 +19,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => AuthViewModel(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => AuthViewModel()),
+        ChangeNotifierProvider(create: (context) => ProductViewModel()),
+        ChangeNotifierProvider(create: (context) => CartViewModel()),
+        ChangeNotifierProvider(create: (context) => OrderViewModel()),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Coffee Shop',
