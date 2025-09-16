@@ -11,7 +11,7 @@ class OrderService {
   ) async {
     try {
       final response = await _dio.post(
-        'http://127.0.0.1:8000/api/v1/orders/',
+        '/api/v1/orders/',
         data: orderData,
         options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
       );

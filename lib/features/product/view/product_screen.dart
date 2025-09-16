@@ -5,6 +5,7 @@ import 'package:uc_coffee_shop/features/product/view/cart_screen.dart';
 import 'package:uc_coffee_shop/features/product/viewmodel/cart_viewmodel.dart';
 import 'package:uc_coffee_shop/features/product/viewmodel/product_viewmodel.dart';
 import 'package:uc_coffee_shop/theme/app_theme.dart';
+import 'package:uc_coffee_shop/features/auth/view/login_screen.dart';
 
 class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key});
@@ -20,8 +21,10 @@ class _ProductScreenState extends State<ProductScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
       if (authViewModel.user?.accessToken != null) {
-        Provider.of<ProductViewModel>(context, listen: false)
-            .fetchProducts(authViewModel.user!.accessToken!);
+        Provider.of<ProductViewModel>(
+          context,
+          listen: false,
+        ).fetchProducts(authViewModel.user!.accessToken!);
       }
     });
   }
@@ -30,6 +33,7 @@ class _ProductScreenState extends State<ProductScreen> {
   Widget build(BuildContext context) {
     final productViewModel = Provider.of<ProductViewModel>(context);
     final cartViewModel = Provider.of<CartViewModel>(context);
+    final authViewModel = Provider.of<AuthViewModel>(context);
 
     return Scaffold(
       backgroundColor: CoffeeShopTheme.cream,
@@ -64,9 +68,7 @@ class _ProductScreenState extends State<ProductScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const CartScreen(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const CartScreen()),
                   );
                 },
               ),
@@ -104,11 +106,132 @@ class _ProductScreenState extends State<ProductScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                CoffeeShopTheme.primaryBrown,
-                CoffeeShopTheme.darkBrown,
-              ],
+              colors: [CoffeeShopTheme.primaryBrown, CoffeeShopTheme.darkBrown],
             ),
+          ),
+        ),
+      ),
+      drawer: Drawer(
+        backgroundColor: CoffeeShopTheme.lightCream,
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      CoffeeShopTheme.primaryBrown,
+                      CoffeeShopTheme.darkBrown,
+                    ],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: CoffeeShopTheme.lightCream.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.person,
+                        color: CoffeeShopTheme.textLight,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            authViewModel.user?.username ?? 'Customer',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: CoffeeShopTheme.textLight,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            authViewModel.user?.email ?? '',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: CoffeeShopTheme.textLight.withOpacity(
+                                    0.8,
+                                  ),
+                                ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(
+                  Icons.home,
+                  color: CoffeeShopTheme.primaryBrown,
+                ),
+                title: Text(
+                  'Home',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: CoffeeShopTheme.primaryBrown,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onTap: () => Navigator.pop(context),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(
+                  Icons.logout,
+                  color: CoffeeShopTheme.errorColor,
+                ),
+                title: Text(
+                  authViewModel.isLoading ? 'Logging out...' : 'Logout',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: CoffeeShopTheme.errorColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                enabled: !authViewModel.isLoading,
+                onTap: () async {
+                  Navigator.pop(context); // close drawer first
+                  final success = await authViewModel.logout();
+                  if (!context.mounted) return;
+                  if (success) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  } else {
+                    final msg = authViewModel.errorMessage.isNotEmpty
+                        ? authViewModel.errorMessage
+                        : 'Logout failed';
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(msg)));
+                  }
+                },
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text(
+                  'UC Coffee Shop',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: CoffeeShopTheme.textSecondary,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -117,10 +240,7 @@ class _ProductScreenState extends State<ProductScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              CoffeeShopTheme.cream,
-              CoffeeShopTheme.lightCream,
-            ],
+            colors: [CoffeeShopTheme.cream, CoffeeShopTheme.lightCream],
           ),
         ),
         child: productViewModel.isLoading
@@ -151,135 +271,149 @@ class _ProductScreenState extends State<ProductScreen> {
                     Text(
                       'Brewing your coffee menu...',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: CoffeeShopTheme.textSecondary,
-                          ),
+                        color: CoffeeShopTheme.textSecondary,
+                      ),
                     ),
                   ],
                 ),
               )
             : productViewModel.error != null
-                ? Center(
-                    child: Container(
-                      margin: const EdgeInsets.all(20),
-                      padding: const EdgeInsets.all(20),
+            ? Center(
+                child: Container(
+                  margin: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: CoffeeShopTheme.lightCream,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: CoffeeShopTheme.errorColor.withOpacity(0.3),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: CoffeeShopTheme.darkBrown.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: CoffeeShopTheme.errorColor,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Oops! Something went wrong',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: CoffeeShopTheme.errorColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        productViewModel.error!,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          final authViewModel = Provider.of<AuthViewModel>(
+                            context,
+                            listen: false,
+                          );
+                          if (authViewModel.user?.accessToken != null) {
+                            productViewModel.fetchProducts(
+                              authViewModel.user!.accessToken!,
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Try Again'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: CoffeeShopTheme.primaryBrown,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : Padding(
+                padding: const EdgeInsets.all(16),
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.7,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: productViewModel.products.length,
+                  itemBuilder: (context, index) {
+                    final product = productViewModel.products[index];
+                    return Container(
                       decoration: BoxDecoration(
                         color: CoffeeShopTheme.lightCream,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: CoffeeShopTheme.errorColor.withOpacity(0.3),
-                        ),
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: CoffeeShopTheme.darkBrown.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
+                            color: CoffeeShopTheme.darkBrown.withOpacity(0.15),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: CoffeeShopTheme.errorColor,
-                            size: 48,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Oops! Something went wrong',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  color: CoffeeShopTheme.errorColor,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            productViewModel.error!,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
-                              if (authViewModel.user?.accessToken != null) {
-                                productViewModel.fetchProducts(authViewModel.user!.accessToken!);
-                              }
-                            },
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Try Again'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: CoffeeShopTheme.primaryBrown,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: GridView.builder(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.7,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
-                      itemCount: productViewModel.products.length,
-                      itemBuilder: (context, index) {
-                        final product = productViewModel.products[index];
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: CoffeeShopTheme.lightCream,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: CoffeeShopTheme.darkBrown.withOpacity(0.15),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          CoffeeShopTheme.lightBrown.withOpacity(0.1),
-                                          CoffeeShopTheme.primaryBrown.withOpacity(0.05),
-                                        ],
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      CoffeeShopTheme.lightBrown.withOpacity(
+                                        0.1,
                                       ),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Image.network(
-                                          product.imageUrl ?? '',
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          errorBuilder: (context, error, stackTrace) {
+                                      CoffeeShopTheme.primaryBrown.withOpacity(
+                                        0.05,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    Image.network(
+                                      product.imageUrl ?? '',
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
                                             return Container(
-                                              color: CoffeeShopTheme.lightBrown.withOpacity(0.1),
+                                              color: CoffeeShopTheme.lightBrown
+                                                  .withOpacity(0.1),
                                               child: const Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
                                                 children: [
                                                   Icon(
                                                     Icons.coffee,
                                                     size: 40,
-                                                    color: CoffeeShopTheme.primaryBrown,
+                                                    color: CoffeeShopTheme
+                                                        .primaryBrown,
                                                   ),
                                                   SizedBox(height: 8),
                                                   Text(
                                                     'No Image',
                                                     style: TextStyle(
-                                                      color: CoffeeShopTheme.textSecondary,
+                                                      color: CoffeeShopTheme
+                                                          .textSecondary,
                                                       fontSize: 12,
                                                     ),
                                                   ),
@@ -287,112 +421,128 @@ class _ProductScreenState extends State<ProductScreen> {
                                               ),
                                             );
                                           },
+                                    ),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
                                         ),
-                                        Positioned(
-                                          top: 8,
-                                          right: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: CoffeeShopTheme.primaryBrown,
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: Text(
-                                              '\$${product.price?.toStringAsFixed(2) ?? '0.00'}',
-                                              style: const TextStyle(
-                                                color: CoffeeShopTheme.textLight,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
+                                        decoration: BoxDecoration(
+                                          color: CoffeeShopTheme.primaryBrown,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          product.name ?? 'Unknown Coffee',
-                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                fontWeight: FontWeight.w600,
-                                                color: CoffeeShopTheme.textPrimary,
-                                              ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const Spacer(),
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton.icon(
-                                            onPressed: () {
-                                              cartViewModel.addToCart(product);
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Row(
-                                                    children: [
-                                                      const Icon(
-                                                        Icons.check_circle,
-                                                        color: CoffeeShopTheme.textLight,
-                                                        size: 20,
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      Expanded(
-                                                        child: Text(
-                                                          '${product.name} added to cart!',
-                                                          style: const TextStyle(
-                                                            color: CoffeeShopTheme.textLight,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  backgroundColor: CoffeeShopTheme.successColor,
-                                                  duration: const Duration(seconds: 2),
-                                                ),
-                                              );
-                                            },
-                                            icon: const Icon(
-                                              Icons.add_shopping_cart,
-                                              size: 16,
-                                            ),
-                                            label: const Text(
-                                              'Add to Cart',
-                                              style: TextStyle(fontSize: 12),
-                                            ),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: CoffeeShopTheme.primaryBrown,
-                                              foregroundColor: CoffeeShopTheme.textLight,
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 8,
-                                              ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                            ),
+                                        child: Text(
+                                          '\$${product.price?.toStringAsFixed(2) ?? '0.00'}',
+                                          style: const TextStyle(
+                                            color: CoffeeShopTheme.textLight,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                            Expanded(
+                              flex: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      product.name ?? 'Unknown Coffee',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: CoffeeShopTheme.textPrimary,
+                                          ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const Spacer(),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          cartViewModel.addToCart(product);
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.check_circle,
+                                                    color: CoffeeShopTheme
+                                                        .textLight,
+                                                    size: 20,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      '${product.name} added to cart!',
+                                                      style: const TextStyle(
+                                                        color: CoffeeShopTheme
+                                                            .textLight,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              backgroundColor:
+                                                  CoffeeShopTheme.successColor,
+                                              duration: const Duration(
+                                                seconds: 2,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.add_shopping_cart,
+                                          size: 16,
+                                        ),
+                                        label: const Text(
+                                          'Add to Cart',
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              CoffeeShopTheme.primaryBrown,
+                                          foregroundColor:
+                                              CoffeeShopTheme.textLight,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 8,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
       ),
     );
   }

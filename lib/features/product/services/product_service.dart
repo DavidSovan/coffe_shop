@@ -8,26 +8,24 @@ class ProductService {
   Future<List<ProductModel>> getProducts(String accessToken) async {
     try {
       final response = await _dio.get(
-        'http://127.0.0.1:8000/api/v1/products',
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $accessToken',
-          },
-        ),
+        '/api/v1/products',
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
       );
 
       if (response.statusCode == 200) {
         final List<ProductModel> products = (response.data as List)
-            .map((product) => ProductModel(
-                  id: product['id'],
-                  name: product['name'],
-                  price: product['price'].toDouble(),
-                  imageUrl: product['image_url'],
-                  description: product['description'],
-                  available: product['available'],
-                  createdAt: DateTime.parse(product['created_at']),
-                  updatedAt: product['updated_at'],
-                ))
+            .map(
+              (product) => ProductModel(
+                id: product['id'],
+                name: product['name'],
+                price: product['price'].toDouble(),
+                imageUrl: product['image_url'],
+                description: product['description'],
+                available: product['available'],
+                createdAt: DateTime.parse(product['created_at']),
+                updatedAt: product['updated_at'],
+              ),
+            )
             .toList();
         return products;
       } else {
